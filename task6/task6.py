@@ -1,0 +1,241 @@
+# -*- coding: utf-8 -*-
+# <nbformat>3.0</nbformat>
+
+# <codecell>
+
+import numpy as np
+from matplotlib import pyplot as plt
+from Orange.classification import Learner, Model
+%matplotlib inline
+from scipy.optimize import fmin_l_bfgs_b
+import Orange
+from copy import copy
+import sklearn
+import sklearn.metrics as skl_metrics
+
+# <codecell>
+
+def logloss(res):
+    ll = []
+    for i in range(res.probabilities.shape[0]):
+        # x je vektor verjetnosti, ki smo jih napovedali dejanskemu razredu
+        x = np.array([v[i] for v, i in zip(res.probabilities[i], res.actual.astype(int))])
+        ll.append(-sum(np.log(x))/len(x))
+    return ll
+
+
+def softmax_function(F):
+    Px = np.exp(F)
+    return Px / np.sum(Px, axis = 1)[:, None]
+
+
+def softmax_function_vect(F):
+    Px = np.exp(F)
+    return Px / np.sum(Px)
+
+
+class IO:
+    def read(fn, train=True):
+        X = np.genfromtxt(fn, delimiter = ',', usecols = np.arange(0, 93), skiprows = 1, dtype = float)
+        atts = [Orange.data.ContinuousVariable('x_' + str(num)) for num in range(93)]
+        class_var = Orange.data.DiscreteVariable('class_', values=[0, 1, 2, 3, 4, 5, 6, 7, 8])
+        dbg_domain = Orange.data.Domain(attributes=atts, class_vars=class_var)
+        # converts first line into int and saves it
+        ids = X[:, 0].copy().astype(int)
+        # changes first line to ones
+        X[:, 0] = np.ones(X.shape[0])
+        if(train):
+            y = np.genfromtxt(fn, delimiter = ',', usecols = {94}, skiprows = 1, dtype = str)
+            # converts classes from string to float numbers
+            yn = np.zeros(len(y))
+            i = 0
+            for el in y:
+                yn[i] = float(el[6])
+                i += 1   
+            y = yn
+            return Orange.data.Table(dbg_domain, X, y)
+        else:
+            return X, ids
+        
+        
+    def write(res, ids):
+        fc = np.hstack((['id'], ids))
+        oc = np.vstack((['Class_1','Class_2','Class_3','Class_4','Class_5','Class_6','Class_7','Class_8','Class_9'], res))
+        sres = np.column_stack((fc, oc))
+        np.savetxt('results.csv', sres, delimiter=",", fmt="%s")
+        
+        
+    def write(res, ids):
+        fc = np.hstack((['id'], ids))
+        oc = np.vstack((['Class_1','Class_2','Class_3','Class_4','Class_5','Class_6','Class_7','Class_8','Class_9'], res))
+        sres = np.column_stack((fc, oc))
+        np.savetxt('results.csv', sres, delimiter=",", fmt="%s") 
+
+class LogLoss(Orange.evaluation.scoring.Score):
+    __wraps__ = skl_metrics.log_loss
+
+    def compute_score(self, results, eps=1e-15, normalize=True, sample_weight=None):
+        return np.fromiter(
+            (skl_metrics.log_loss(results.actual,
+                                  probabilities,
+                                  eps=eps,
+                                  normalize=normalize,
+                                  sample_weight=sample_weight)
+             for probabilities in results.probabilities),
+            dtype=np.float64, count=len(results.probabilities))
+    
+    
+class GradBoostRLearner(Learner):
+    """Gradient Boosting for Regression."""
+    def __init__(self, learner, loss, n_estimators=10, epsilon=1e-5):
+        super().__init__()
+        self.n_estimators = n_estimators
+        self.learner = learner  # base learner
+        self.epsilon = epsilon
+        self.loss = loss
+        
+        
+    def grad_squared_loss(self, y, f):
+        """Negative gradient for squared loss."""
+        return y - f
+    
+    
+    def grad_abs_loss(self, y, f):
+        """Negative gradient for absolute loss."""
+        return np.sign(y - f)
+
+    
+    def grad_huber_loss(self, y, f, delta=0.5):
+        """Negative gradient for Huber loss."""
+        r0 = y - f
+        r1 = delta * np.sign(r0)
+        return np.vstack((r0, r1)).T[np.arange(y.shape[0]), (np.abs(r0)>delta).astype(int)]
+
+    
+    def reshape_y(self, unique, Y):
+        # elements with ones and zeros if calculation is for them
+        return np.array([np.array(Y == el).astype(float) for el in unique]).T
+
+    
+    def format_data(self, data):
+        Y = data.Y
+        c = np.unique(Y)
+        sy = self.reshape_y(c, Y)
+        f = np.ones(sy.shape) / len(c)
+        return sy, f, c
+
+    
+    def grad_approx(self, F, Y, e=1e-3):
+        vF = F[:, 0]
+        vY = Y[:, 0]
+        return np.array([(kl_divergence(vY, softmax_function_vect(vF+eps), False) - kl_divergence(vY, softmax_function_vect(vF-eps), False))/(2*e)
+                         for eps in np.identity(len(vF)) * e])
+
+
+    def cost_grad_test(self, F, Y):
+        ng = self.grad_approx(F, Y)
+        ag = -kl_divergence(Y, F)
+        print(np.sum((ag[:, 0] - ng)**2))
+
+
+    def fit_storage(self, data):
+        """Fitter. Learns a set of models for gradient boosting."""
+        dom = data.domain
+        y, f, c = self.format_data(data)
+        f = f
+        models = []
+        #print ("Numerical grad: ")
+        #self.cost_grad_test(f, y)
+        p = softmax_function(f).copy()
+        e = self.loss(y, p) #residual
+        for i in range(self.n_estimators):
+            model = []
+            print(i/self.n_estimators)
+            for er, j in zip(e.T, range(e.shape[1])):
+                l_data = Orange.data.Table(data.X, er)
+                mod = copy(self.learner.fit(l_data.X, l_data.Y))
+                f[:, j] += mod.predict(l_data.X)
+                model.append(mod)
+            p = softmax_function(f).copy()
+            e = self.loss(y, p) #residual
+            models.append(model)
+        return GradBoostRModel(models, c, dom)
+
+
+class GradBoostRModel(Model):
+    """Classifier for gradient boosting."""
+    def __init__(self, models, c, dom):
+        self.models = models
+        
+        self.classes = c
+        self.domain = dom
+
+
+    def predict(self, X):
+        """Given a data instance or table of data instances returns predicted class."""
+        f = np.ones((X.shape[0], len(self.classes))) / len(self.classes)
+        modLen = range(len(self.models[0]))
+        for modelsL in self.models:
+            #f = softmax_function(f)
+            for model, i in zip(modelsL, modLen):
+                f[:, i] += model.predict(X)
+        f = softmax_function(f)
+        return f
+
+# <codecell>
+
+#stree = Orange.classification.SimpleTreeLearner(max_depth=3)
+stree2 = sklearn.tree.DecisionTreeRegressor(max_depth=6)
+rf = sklearn.ensemble.RandomForestRegressor(n_estimators=5, max_depth=3)
+lr = sklearn.linear_model.LinearRegression()
+
+# PRIPRAVA FUNKCIJ ZA IZRAČUN
+def kl_divergence(Y, F, only_grad = True):
+    ########### COST ###########
+    if (not only_grad):
+        div = np.divide(Y, F+1e-8)
+        cost = sum(Y * np.log(div+1e-8))
+        return cost
+    
+    ########### GRAD ###########
+    grad = Y - F
+    #print (grad)
+    if (only_grad):
+        return grad
+    #return cost, grad
+
+# <codecell>
+
+# IRIS ZA METODO KONČNIH KVADRANTOV
+iris = Orange.data.Table("iris")
+#class_var = Orange.data.DiscreteVariable('c', values=(i for i in range(len(iris.domain.class_var.values))))
+#domain = Orange.data.Domain(iris.domain.attributes, class_var)
+#data = Orange.data.Table(domain, iris.X, iris.Y)
+ann2 = GradBoostRLearner(stree2, kl_divergence, n_estimators=100)
+res2 = Orange.evaluation.CrossValidation(iris, [ann2], k=10)
+logloss(res2)
+
+# <codecell>
+
+# LOAD DATA
+train = IO.read('train.csv')
+test, ids = IO.read('test.csv', False)
+
+# <codecell>
+
+# CROSS VALIDACIJA
+ann3 = GradBoostRLearner(rf, kl_divergence, n_estimators=10)
+res3 = Orange.evaluation.CrossValidation(train, [ann3], k=5)
+
+# <codecell>
+
+LogLoss(res3)
+
+# <codecell>
+
+# GET RESULTS
+ann = GradBoostRLearner(stree2, kl_divergence, n_estimators=1000)
+model = ann(train)
+res = model(test, ret=Orange.classification.Model.Probs)
+IO.write(res, ids)
+

@@ -1,0 +1,122 @@
+import java.awt.event.*;
+import java.awt.*;
+import java.applet.*;
+/*
+<applet code="fc" height="400" width="300">
+</applet>
+*/
+public class fc extends Applet
+{
+ 
+    TextArea txtarea;
+    List lstSize,lstFont;
+    Checkbox chStyle[];
+    CheckboxGroup cg;
+    int Fstyle=0;
+    int Fsize=10;
+    String Fname="";
+ 
+    public void init()
+    {
+        setSize(300,200);
+ 
+        txtarea=new TextArea("Antiks",5,40,1);
+        this.add(txtarea);
+ 
+        lstSize=new List(3,false);
+        lstSize.add("15");
+        lstSize.add("16");
+        lstSize.add("18");
+        lstSize.add("20");
+        lstSize.add("22");
+        lstSize.add("24");
+        lstSize.add("26");
+        this.add(lstSize);
+        SizeEvent se=new SizeEvent();
+        lstSize.addItemListener(se);
+ 
+        lstFont=new List(3,false);
+                lstFont.add("Times New Roman");
+        lstFont.add("MONOSPACED");
+        lstFont.add("SANS_SERIF");
+        lstFont.add("SERIF");
+        lstFont.add("Century Schoolbook");
+        lstFont.add("Dialog");
+        this.add(lstFont);
+        FontEvent fe=new FontEvent();
+        lstFont.addItemListener(fe);
+ 
+        cg=new CheckboxGroup();
+        chStyle=new Checkbox[3];
+        chStyle[0]=new Checkbox("Bold",cg,false);
+        chStyle[1]=new Checkbox("Regular",cg,false);
+        chStyle[2]=new Checkbox("Italic",cg,false);
+        this.add(chStyle[0]);
+        this.add(chStyle[1]);
+        this.add(chStyle[2]);
+        StyleEvent ste=new StyleEvent();
+        chStyle[0].addItemListener(ste);
+        chStyle[1].addItemListener(ste);
+        chStyle[2].addItemListener(ste);
+ 
+        display();
+ 
+    }
+ 
+    public void display()
+    {
+        Font f=new Font(Fname,Fstyle,Fsize);
+        String txt=txtarea.getText();
+        txtarea.setFont(f);
+        txtarea.setText(txt);
+ 
+    }
+ 
+    class SizeEvent implements ItemListener
+    {
+        public void itemStateChanged(ItemEvent e)
+        {
+ 
+            Object[] o=lstSize.getSelectedObjects();
+            String label=o[0].toString();
+            Fsize=Integer.parseInt(label);
+            display();
+        }
+    }
+ 
+    class FontEvent implements ItemListener
+    {
+        public void itemStateChanged(ItemEvent e)
+        {
+            Object[] o=lstFont.getSelectedObjects();
+            Fname=o[0].toString();
+            display();
+ 
+        }
+    }
+ 
+    class StyleEvent implements ItemListener
+    {
+        public void itemStateChanged(ItemEvent e)
+        {
+ 
+            if(chStyle[1].getState())
+            {
+                Fstyle=Font.PLAIN;
+            }
+            else if(chStyle[0].getState())
+            {
+                Fstyle=Font.BOLD;
+            }   
+            else if(chStyle[2].getState())
+            {   
+                Fstyle=Font.ITALIC;
+            }
+ 
+            display();
+ 
+        }
+ 
+    }
+ 
+}

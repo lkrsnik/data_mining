@@ -1,0 +1,112 @@
+#include <stdarg.h>
+#include <stdlib.h>
+
+static void **md2(int n_units, int ndim, int *dims);
+static void md3(char ***tip, int n_units, int ndim, int *dims);
+
+static int w_units;
+
+/* mdalloc: entry point for mdalloc function described above
+ *      - reduces variable arg list to fixed list with last arg
+ *      represented as pointer to int (array dimensions).
+ *      Calls md2 to allocate storage.
+ *      Calls md3 to initialize intermediate pointers.
+ *      Returns pointer.
+ */
+
+void *mdalloc(int ndim, int width, ...)
+{
+      va_list argp;
+      int *dims, i;
+      char ***tip;
+
+      va_start(argp, width);
+
+      /* allocate storage for variable args (dimensions) */
+
+      dims = malloc(ndim*sizeof(int));
+      if(dims == NULL)
+            return NULL;
+
+      /* initialize dimensions array for subsequent calls */
+
+      for(i=0; i<ndim; i++)
+            dims[i] = va_arg(argp,int);
+
+      w_units = width;    /* global used by md2 and md3 */
+
+      /* allocate required pointer and array element storage */
+
+      tip = (char ***)md2(dims[0], ndim, &dims[1]);
+
+      if(ndim>1 && tip)
+            md3(tip, dims[0], ndim-1, &dims[1]); /* init pointers */
+
+      free(dims);
+      return tip;
+}
+
+/* mdfree:  companion function to mdalloc
+ *          frees storage obtained by mdalloc
+ */
+
+void mdfree(void *tip, int ndim)
+{
+      if(ndim == 1)
+            free(tip);
+      else
+      {
+            mdfree(((void **)tip)[0], ndim-1);
+            free(tip);
+      }
+}
+
+/* md2:  allocates storage for n-way indirect pointer arrays
+ *       allocates storage for requested array elements
+ */
+
+static void **md2(int n_units, int ndim, int *dims)
+{
+      char **tip;
+
+      if(ndim == 1)
+            /* recursed to final dimension - allocate element storage */
+            tip = malloc(n_units*w_units);
+      else
+      {
+            /* allocate pointer array for dimension n */
+            tip = malloc(n_units*sizeof(char *));
+            if(tip)
+            {
+                  /* recurse until final dimension */
+                  tip[0] = (char *)md2(n_units*dims[0], ndim-1, &dims[1]);
+                  if(tip[0] == NULL)
+                  {
+                        /* allocate error - fall back up freeing everything */
+                        free(tip);
+                        tip = NULL;
+                  }
+            }
+      }
+      return (void **)tip;
+}
+
+/* md3: initializes indirect pointer arrays */
+
+static void md3(char ***tip, int n_units, int ndim, int *dims)
+{
+      int i;
+
+      for(i=1; i<n_units; i++)
+      {
+            if(ndim == 1)
+                  /* final dimension - must scale by element width */
+                  tip[i] = (char **)((char *)tip[0] + i*dims[0]*w_units);
+            else
+                  /* intermediate dimension - scale by pointer size */
+                  tip[i] = tip[0] + i*dims[0];
+      }
+      if(ndim > 1)
+            /* not at final dimension - continue to recurse */
+            md3((char ***)tip[0], n_units*dims[0], ndim-1, &dims[1]);
+}

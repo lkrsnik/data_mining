@@ -1,0 +1,356 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.Component;
+ 
+public class Calci
+{
+ 
+    public static void main(String args[])
+    {
+        Calculate cal=new Calculate();
+ 
+    }
+}
+ 
+class Calculate extends Frame {
+    TextField text;
+    Checkbox binary,hex,octal,decimal;
+    int radix=2;
+    Calculate()
+    {
+        setTitle("CALCULATOR");
+        setSize(300,300);
+        BorderLayout border=new BorderLayout();
+ 
+        Designtext td=new Designtext();
+        this.add(td,border.NORTH);
+ 
+        Design desg=new Design();
+        this.add(desg,border.CENTER);
+ 
+        NumberSys n=new NumberSys();
+        add(n,border.EAST);
+        setVisible(true);
+        addWindowListener(new WindowAdapter(){public void windowClosing(WindowEvent e){System.exit(0);}});
+ 
+    }
+ 
+    class NumberSys extends Panel 
+    {
+        //Checkbox binary,hex,octal,decimal;
+        NumberSys()
+        {
+            CheckboxGroup grp=new CheckboxGroup();
+             octal=new Checkbox("octal",grp,false);
+             binary=new Checkbox("Binary",grp,true);
+             hex=new Checkbox("Hex",grp,false);
+             decimal=new Checkbox("Decimal",grp,false);
+ 
+            setLayout(new GridLayout(4,1));
+            this.add(binary);
+            this.add(octal);
+            this.add(hex);
+            this.add(decimal);
+ 
+            Design d=new Design();
+            binary.addItemListener(d);
+            octal.addItemListener(d);
+            hex.addItemListener(d);
+            decimal.addItemListener(d);
+        }
+        /*public void itemStateChanged(ItemEvent e)
+        {
+            if(binary.getState())
+                radix=2;
+            else if(octal.getState())
+                radix=8;
+            else if(hex.getState())
+                radix=16;
+            else radix=10;
+        }*/ 
+ 
+    }
+ 
+    class Design extends Panel implements ActionListener,ItemListener
+    {
+ 
+        Button btn1,btn2,btn3,btn4,btn5,btn6,btn7,btn8,btn9,btn0,plus,minus,divide,multiply,equals,clear,decimal;
+        Button btnA,btnB,btnC,btnD,btnE,btnF;
+        int opr1,opr2;
+        String opr1_str;
+        char operation;
+        boolean decimal_enable=true;
+        int i=1;
+        public Design()
+        {        
+            this.setLayout(new GridLayout(6,4));    
+            btn1=new Button(""+i);
+            add(btn1);
+            btn1.addActionListener(this);
+ 
+            btn2=new Button("2");
+            add(btn2);
+            btn2.addActionListener(this);
+ 
+            btn3=new Button("3");
+            add(btn3);
+            btn3.addActionListener(this);
+ 
+            btn4=new Button("4");
+            add(btn4);
+            btn4.addActionListener(this);
+ 
+            btn5=new Button("5");
+            add(btn5);
+            btn5.addActionListener(this);
+ 
+            btn6=new Button("6");
+            add(btn6);
+            btn6.addActionListener(this);
+ 
+            btn7=new Button("7");
+            add(btn7);
+            btn7.addActionListener(this);
+ 
+            btn8=new Button("8");
+            add(btn8);
+            btn8.addActionListener(this);
+ 
+            btn9=new Button("9");
+            add(btn9);
+            btn9.addActionListener(this);
+ 
+            clear=new Button("clear");
+            add(clear);
+            clear.addActionListener(this);
+ 
+            btn0=new Button("0");
+            add(btn0);
+            btn0.addActionListener(this);
+ 
+            //if(radix==16)
+            {
+                btnA=new Button("A");
+                add(btnA);
+                btnA.addActionListener(this);
+ 
+                btnB=new Button("B");
+                add(btnB);
+                btnB.addActionListener(this);
+ 
+                btnC=new Button("C");
+                add(btnC);
+                btnC.addActionListener(this);
+ 
+                btnD=new Button("D");
+                add(btnD);
+                btnD.addActionListener(this);
+ 
+                btnE=new Button("E");
+                add(btnE);
+                btnE.addActionListener(this);
+ 
+                btnF=new Button("F");
+                add(btnF);
+                btnF.addActionListener(this);
+ 
+            }
+            decimal=new Button(".");
+            add(decimal);
+            decimal.addActionListener(this);
+ 
+            equals=new Button("=");
+            add(equals);
+            equals.addActionListener(this);
+ 
+            plus=new Button("+");
+            add(plus);
+            plus.addActionListener(this);
+ 
+            minus=new Button("-");
+            add(minus);
+            minus.addActionListener(this);
+ 
+            multiply=new Button("*");
+            add(multiply);
+            multiply.addActionListener(this);
+ 
+            divide=new Button("/");
+            add(divide);
+            divide.addActionListener(this);
+ 
+            setVisible(true);
+        }
+ 
+        public void itemStateChanged(ItemEvent e)
+        {
+            if(binary.getState())
+            {   
+                radix=2;
+                btnA.setEnabled(false);
+            }
+            else if(octal.getState())
+                radix=8;
+            else if(hex.getState())
+                radix=16;
+            else radix=10;
+        }   
+        public void actionPerformed(ActionEvent e)
+        {
+            String source=e.getActionCommand();
+            String data=text.getText();
+ 
+            if(source.equals("1"))
+            {
+                text.setText(data+"1");
+            }
+            if(source.equals("2"))
+            {
+                text.setText(data+"2");
+            }
+            if(source.equals("3"))
+            {
+                text.setText(data+"3");
+            }
+            if(source.equals("4"))
+            {
+                text.setText(data+"4");
+            }
+            if(source.equals("5"))
+            {
+                text.setText(data+"5");
+            }
+            if(source.equals("6"))
+            {
+                text.setText(data+"6");
+            }
+ 
+            if(source.equals("7"))
+            {
+                text.setText(data+"7");
+            }
+            if(source.equals("8"))
+            {
+                text.setText(data+"8");
+            }
+            if(source.equals("9"))
+            {
+                text.setText(data+"9");
+            }
+            if(source.equals("0"))
+            {
+                text.setText(data+"0");
+            }
+            if(source.equals("A"))
+            {
+                text.setText(data+"A");
+            }
+            if(source.equals("B"))
+            {
+                text.setText(data+"B");
+            }
+            if(source.equals("C"))
+            {
+                text.setText(data+"C");
+            }
+            if(source.equals("D"))
+            {
+                text.setText(data+"D");
+            }
+            if(source.equals("E"))
+            {
+                text.setText(data+"E");
+            }
+            if(source.equals("F"))
+            {
+                text.setText(data+"F");
+            }
+            if(source.equals("+"))
+            {   
+ 
+                opr1=Integer.parseInt(data,radix);
+                text.setText(data+"+");
+                opr1_str=text.getText();
+                decimal_enable=true;
+                operation='+';
+            }
+            if(source.equals("*"))
+            {
+                opr1=Integer.parseInt(data,radix);
+                text.setText(data+"*");
+                opr1_str=text.getText();
+                decimal_enable=true;
+                operation='*';
+            }
+            if(source.equals("/"))
+            {
+                opr1=Integer.parseInt(data,radix);
+                text.setText(data+"/");
+                opr1_str=text.getText();
+                decimal_enable=true;
+                operation='/';
+            }
+            if(source.equals("-"))
+            {
+                opr1=Integer.parseInt(data,radix);
+                text.setText(data+"-");
+                opr1_str=text.getText();
+                decimal_enable=true;
+                operation='-';
+            }
+            if(source.equals("."))
+            {
+                if(decimal_enable)
+                {
+                    decimal_enable=false;               
+                    text.setText(data+".");
+                }
+            }
+            if(source.equals("clear"))
+            {
+                text.setText("");
+                decimal_enable=true;
+            }
+            if(source.equals("="))
+            {
+                try
+                {               
+                    String exp=text.getText();
+                    String opr2_str=exp.substring(opr1_str.length());
+                    //System.out.println(opr2_str);
+                    opr2=Integer.parseInt(opr2_str,radix);
+                    if(operation=='+')
+                    {   
+                        if(radix==2)
+                        text.setText(Integer.toBinaryString(opr1+opr2));
+                        else if(radix==8)
+                        text.setText(Integer.toOctalString(opr1+opr2));
+                        else if(radix==16)
+                        text.setText(Integer.toHexString(opr1+opr2));
+                        else
+                        text.setText(Integer.toString(opr1+opr2));
+                    }
+                    else if(operation=='-')
+                    text.setText(""+(opr1-opr2));
+                    else if(operation=='*')
+                    text.setText(""+(opr1*opr2));
+                    else 
+                    text.setText(""+(opr1/opr2));
+                }catch(Exception exp)
+                {
+                    text.setText(data);
+                }               
+            }
+        }
+    }
+ 
+ 
+    class Designtext extends Panel
+    {
+        public Designtext()
+        {
+            text=new TextField(30);
+            add(text);
+        }
+    }
+}

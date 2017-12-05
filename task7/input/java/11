@@ -1,0 +1,76 @@
+import java.sql.*;
+import java.util.Scanner;
+ 
+public class simplejdbc
+{
+ 
+     static
+  {
+    try
+    {
+      // loads com.mysql.jdbc.Driver into memory
+      Class.forName("com.mysql.jdbc.Driver");
+    } 
+    catch (ClassNotFoundException cnf) 
+    {
+      System.out.println("Driver could not be loaded: " + cnf);
+    }
+  }
+ 
+    public static void main(String []args) 
+    {
+        Scanner scan=new Scanner(System.in);
+    try
+    {
+        //Class.forName("com.mysql.jdbc.Driver");
+        while(true)
+        {
+        String url="jdbc:mysql://localhost:3306/student";
+        Connection conn=DriverManager.getConnection(url,"root","");
+ 
+ 
+        Statement st= conn.createStatement();
+ 
+        System.out.println("To Exit type id As 1000 else to continue input any other integer ");
+ 
+        System.out.println("Enter the input  ");
+        int i= scan.nextInt();
+ 
+        if(i!=1000)
+        {
+        System.out.println("Enter The id");
+        int id= scan.nextInt();
+        System.out.println("Enter The name");
+        String name= scan.next();
+ 
+ 
+        String query="INSERT into info (id,name) VALUES("+id+",\""+name+"\")";
+        st.executeUpdate(query);
+ 
+        String query1="SELECT * from info";
+ 
+        ResultSet rs=st.executeQuery(query1);
+        System.out.println("ID \tNAME");
+        System.out.println("============");
+ 
+        while(rs.next()){
+ 
+        System.out.println(rs.getInt("id")+".\t"+rs.getString("name"));
+        }
+        }
+        else
+        {
+        System.exit(0);
+        }
+        if (conn != null)
+      {
+        conn.close();
+        conn = null;
+      }}
+    }
+     catch (SQLException sqle) 
+    {
+      System.out.println("SQL Exception thrown: " + sqle);
+    }
+    }
+}

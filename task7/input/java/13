@@ -1,0 +1,379 @@
+//SERVER.java
+ 
+import java.awt.*;
+ 
+import javax.swing.*;
+import java.awt.event.*;
+ 
+ 
+import java.io.*;
+ 
+ 
+import java.net.*;
+ 
+ 
+ 
+ 
+ 
+public class server extends JFrame implements ActionListener
+ 
+ 
+{
+ 
+ 
+    ServerSocket ss;
+ 
+ 
+    Socket s;
+ 
+ 
+    JTextField t;
+ 
+ 
+    JTextArea txt;
+ 
+ 
+    DataInputStream din=null;
+ 
+ 
+    DataOutputStream dout=null;
+ 
+ 
+    InputStream is=null;
+ 
+ 
+    OutputStream os=null;
+ 
+ 
+    String st;
+ 
+ 
+    public static void main(String [] args)
+ 
+ 
+    {
+ 
+ 
+        server c=new server();
+ 
+ 
+    }
+ 
+ 
+    public server()
+ 
+ 
+    {
+ 
+ 
+        try
+ 
+ 
+        {
+ 
+ 
+            BorderLayout bl=new BorderLayout();
+ 
+ 
+            setLayout(bl);
+ 
+ 
+            setTitle("Server scrren");
+ 
+ 
+            setSize(300,300);
+ 
+ 
+            ss=new ServerSocket(1500,5);
+ 
+ 
+            t=new JTextField(10);
+ 
+ 
+            add(t,bl.SOUTH);
+ 
+ 
+            txt=new JTextArea();
+ 
+ 
+            add(txt,bl.CENTER);
+ 
+ 
+            t.addActionListener(this);
+ 
+ 
+            addWindowListener(new WindowAdapter(){public void windowClosing(WindowEvent e){System.exit(0);}});
+ 
+ 
+            setVisible(true);
+ 
+ 
+            txt.setText("Client says:");
+ 
+ 
+            s=ss.accept();
+ 
+ 
+            while(true)
+ 
+ 
+            {
+ 
+ 
+ 
+is=s.getInputStream();
+ 
+ 
+                din=new DataInputStream(is);
+ 
+ 
+                os=s.getOutputStream();
+ 
+ 
+                dout=new DataOutputStream(os);
+ 
+ 
+                st=din.readUTF();
+ 
+ 
+                txt.append(st);
+ 
+ 
+            }
+ 
+ 
+        }
+ 
+ 
+        catch(Exception e)
+ 
+ 
+        {}
+ 
+ 
+    }
+ 
+ 
+    public void actionPerformed(ActionEvent e)
+ 
+ 
+    {
+ 
+ 
+        try
+ 
+ 
+        {
+ 
+ 
+            String msg;
+ 
+ 
+            msg=t.getText()+"\n";
+ 
+ 
+            dout.writeUTF(msg);
+ 
+ 
+            t.setText("");
+ 
+ 
+        }
+ 
+ 
+        catch(Exception ae)
+ 
+ 
+        {}
+ 
+    }
+ 
+ 
+}
+ 
+ 
+//CLIENT.java
+ 
+import java.awt.*;
+ 
+import java.awt.event.*;
+ 
+import javax.swing.*;
+import java.io.*;
+ 
+ 
+import java.net.*;
+ 
+ 
+ 
+ 
+ 
+public class client extends JFrame implements ActionListener
+ 
+ 
+{
+ 
+ 
+    Socket s;
+ 
+ 
+    JTextField t;
+ 
+ 
+    JTextArea txt;
+ 
+ 
+    DataInputStream din=null;
+ 
+ 
+    DataOutputStream dout=null;
+ 
+ 
+    InputStream is=null;
+ 
+ 
+    OutputStream os=null;
+ 
+ 
+    String st;
+ 
+ 
+    public static void main(String [] args)
+ 
+ 
+    {
+ 
+ 
+        client c=new client();
+ 
+ 
+    }
+ 
+ 
+    public client()
+ 
+ 
+    {
+ 
+ 
+        try
+ 
+ 
+        {
+ 
+ 
+            BorderLayout bl=new BorderLayout();
+ 
+ 
+            setLayout(bl);
+ 
+ 
+            setTitle("Client scrren");
+ 
+ 
+            setSize(300,300);
+ 
+ 
+            s=new Socket("127.0.0.1",1500);
+ 
+ 
+            t=new JTextField(10);
+ 
+ 
+            add(t,bl.SOUTH);
+ 
+ 
+            txt=new JTextArea();
+ 
+ 
+            add(txt,bl.CENTER);
+ 
+ 
+            t.addActionListener(this);
+ 
+ 
+            addWindowListener(new WindowAdapter(){public void windowClosing(WindowEvent e){System.exit(0);}});
+ 
+ 
+            setVisible(true);
+ 
+ 
+            txt.setText("Server says:");
+ 
+ 
+            while(true)
+ 
+ 
+            {
+ 
+ 
+                is=s.getInputStream();
+ 
+ 
+                din=new DataInputStream(is);
+ 
+ 
+                os=s.getOutputStream();
+ 
+ 
+                dout=new DataOutputStream(os);
+ 
+ 
+                st=din.readUTF();
+ 
+ 
+                txt.append(st);
+ 
+ 
+            }
+ 
+ 
+        }
+ 
+ 
+        catch(Exception e)
+ 
+ 
+        {}
+ 
+ 
+    }
+ 
+ 
+    public void actionPerformed(ActionEvent e)
+ 
+ 
+    {
+ 
+ 
+        try
+ 
+ 
+        {
+ 
+ 
+            String msg;
+ 
+ 
+            msg=t.getText()+"\n";
+ 
+ 
+            dout.writeUTF(msg);
+ 
+ 
+            t.setText("");
+ 
+ 
+        }
+ 
+ 
+        catch(Exception ae)
+ 
+ 
+        {}
+ 
+ 
+    }
+ 
+ 
+}

@@ -1,0 +1,239 @@
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Scanner;
+ 
+public class BirthdayBinarySearchTree {
+    private BSTnode root;
+ 
+    public static void main(String[] args) throws Exception {
+        BirthdayBinarySearchTree tree = new BirthdayBinarySearchTree();
+ 
+        if (args.length > 0) {
+            Scanner scanner = new Scanner(new FileReader("birthdays.txt"));
+            String line;
+            while (scanner.hasNextLine()) {
+                line = scanner.nextLine();
+ 
+                String[] parts = line.split(" ", 3);
+                if (3 == parts.length) {
+                    tree.add(parts[2], Integer.valueOf(parts[0]),
+                            Integer.valueOf(parts[1]));
+                }
+            }
+        } else {
+            tree.add("Test 3,3", 3, 3);
+            tree.add("Test 1,1 (1)", 1, 1);
+            tree.add("Test 1,1 (2)", 1, 1);
+            tree.add("Test 2,2", 2, 2);
+            tree.add("Test 4,4", 4, 4);
+ 
+            if (null != tree.get(5, 5)) {
+                System.out.println("Error");
+            }
+ 
+            System.out.println("Jan, 1 birthdays");
+ 
+            ArrayList<String> names = tree.get(1, 1);
+            if (null == names) {
+                System.out.println("Error");
+            } else {
+                for (String name : names) {
+                    System.out.println(" - " + name);
+                }
+            }
+            System.out.println();
+        }
+ 
+        System.out.println("List all");
+        tree.listAll();
+        System.out.println();
+ 
+        System.out.println("List range");
+        tree.listRange(2, 2, 4, 4);
+    }
+ 
+    public void add(String name, int birthMonth, int birthDay) {
+        root = addHelper(root, name, new Birthday(birthMonth, birthDay));
+    }
+ 
+    private BSTnode addHelper(BSTnode node, String name, Birthday birthday) {
+        if (null == node) {
+            return new BSTnode(name, birthday);
+        }
+ 
+        int compareTo = birthday.compareTo(node.getBirthday());
+ 
+        if (compareTo > 0) {
+            node.right = addHelper(node.getRight(), name, birthday);
+        } else if (compareTo < 0) {
+            node.left = addHelper(node.getLeft(), name, birthday);
+        } else {
+            node.getNames().add(name);
+        }
+ 
+        return node;
+    }
+ 
+    public void listAll() {
+        listHelper(iteratorInOrder());
+    }
+ 
+    private void listHelper(Iterator<BSTnode> iterator) {
+        while (iterator.hasNext()) {
+            BSTnode node = iterator.next();
+            StringBuilder sb = new StringBuilder();
+            sb.append(node.getBirthday()).append("\n");
+ 
+            for (String name : node.getNames()) {
+                sb.append(" - ").append(name).append("\n");
+            }
+ 
+            System.out.print(sb);
+        }
+    }
+ 
+    public ArrayList<String> get(int birthdayMonth, int birthDay) {
+        Birthday birthday = new Birthday(birthdayMonth, birthDay);
+        BSTnode node = root;
+ 
+        while (null != node) {
+            int compareTo = birthday.compareTo(node.getBirthday());
+ 
+            if (compareTo > 0) {
+                node = node.getRight();
+            } else if (compareTo < 0) {
+                node = node.getLeft();
+            } else {
+                return node.getNames();
+            }
+        }
+ 
+        return null;
+    }
+ 
+    public void listRange(int startMonth, int startDay, int endMonth, int endDay) {
+        List<BSTnode> list = new LinkedList<BSTnode>();
+        rangeIterateHelper(root, list, new Birthday(startMonth, startDay),
+                new Birthday(endMonth, endDay));
+        listHelper(list.iterator());
+    }
+ 
+    private void rangeIterateHelper(BSTnode node, List<BSTnode> list,
+            Birthday min, Birthday max) {
+        if (node == null) {
+            return;
+        }
+ 
+        int minCompareTo = min.compareTo(node.getBirthday());
+        int maxCompareTo = max.compareTo(node.getBirthday());
+ 
+        if (minCompareTo < 0) {
+            rangeIterateHelper(node.getLeft(), list, min, max);
+        }
+ 
+        if ((minCompareTo <= 0) && (maxCompareTo >= 0)) {
+            list.add(node);
+        }
+ 
+        if (maxCompareTo > 0) {
+            rangeIterateHelper(node.getRight(), list, min, max);
+        }
+    }
+ 
+    public Iterator<BSTnode> iteratorInOrder() {
+        List<BSTnode> list = new LinkedList<BSTnode>();
+        iterateHelper(list, root);
+        return list.iterator();
+    }
+ 
+    private void iterateHelper(List<BSTnode> list, BSTnode node) {
+        if (null != node) {
+            iterateHelper(list, node.getLeft());
+            list.add(node);
+            iterateHelper(list, node.getRight());
+        }
+    }
+ 
+    private static class BSTnode {
+        private Birthday birthday;
+        private ArrayList<String> names = new ArrayList<String>();
+ 
+        private BSTnode left;
+        private BSTnode right;
+ 
+        private BSTnode(String name, Birthday birthday) {
+            this.birthday = birthday;
+            this.names.add(name);
+        }
+ 
+        private Birthday getBirthday() {
+            return birthday;
+        }
+ 
+        private ArrayList<String> getNames() {
+            return names;
+        }
+ 
+        private BSTnode getLeft() {
+            return left;
+        }
+ 
+        private BSTnode getRight() {
+            return right;
+        }
+    }
+ 
+    private static class Birthday implements Comparable<Birthday> {
+        private int month;
+        private int day;
+ 
+        private Birthday(int month, int day) {
+            this.month = month;
+            this.day = day;
+        }
+ 
+        public int compareTo(Birthday that) {
+            if (this.month < that.month) {
+                return -1;
+            }
+ 
+            if (this.month > that.month) {
+                return 1;
+            }
+ 
+            if (this.day < that.day) {
+                return -1;
+            }
+ 
+            if (this.day > that.day) {
+                return 1;
+            }
+ 
+            return 0;
+        }
+ 
+        public String toString() {
+            return "month=" + month + ", day=" + day;
+        }
+ 
+        private int getMonth() {
+            return month;
+        }
+ 
+        private void setMonth(int month) {
+            this.month = month;
+        }
+ 
+        private int getDay() {
+            return day;
+        }
+ 
+        private void setDay(int day) {
+            this.day = day;
+        }
+    }
+}

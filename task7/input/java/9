@@ -1,0 +1,48 @@
+import java.io.File;    
+    import java.net.URL;  
+    import javax.swing.UIManager;  
+    import javax.swing.JFrame;    
+    import javax.swing.JTree;    
+    import javax.swing.JScrollPane;    
+    import javax.swing.tree.DefaultMutableTreeNode;   
+    import javax.swing.tree.TreePath;   
+    import javax.swing.JOptionPane;  
+    import javax.swing.Icon;  
+    import javax.swing.ImageIcon;  
+ 
+ 
+    class Program extends JFrame{    
+ 
+        public Program(){    
+ 
+            URL resource = getClass().getResource("NodeImage.jpg");  
+            Icon icon = new ImageIcon(resource);  
+ 
+            UIManager.put("Tree.closedIcon", icon);  
+            UIManager.put("Tree.openIcon", icon);  
+            UIManager.put("Tree.leafIcon", icon);  
+ 
+            DefaultMutableTreeNode root = new DefaultMutableTreeNode("Fruits");    
+ 
+            DefaultMutableTreeNode node1 = new DefaultMutableTreeNode("Apples");  
+            DefaultMutableTreeNode node2 = new DefaultMutableTreeNode("Grapes");  
+            DefaultMutableTreeNode node3 = new DefaultMutableTreeNode("Oranges");  
+            DefaultMutableTreeNode node4 = new DefaultMutableTreeNode("Bananas");  
+ 
+            root.add(node1);  
+            root.add(node2);  
+            root.add(node3);  
+            root.add(node4);  
+ 
+            JTree tree = new JTree(root);      
+            JScrollPane treeView = new JScrollPane(tree);    
+ 
+            this.getContentPane().add(treeView);    
+        }    
+ 
+        public static void main(String[] args){      
+            Program p = new Program();    
+            p.setSize(300,400);    
+            p.setVisible(true);    
+        }    
+    }

@@ -1,0 +1,124 @@
+@Component
+public abstract class Dashboard {
+ 
+    public Dashboard(){}
+ 
+    @Autowired
+    private ActionBulletinService actionBulletinService;
+ 
+    WorkFlowDashboardBehavior behavior;
+ 
+ 
+    public List<OrderDetail> retrieveDashBoardList(UserMaster user, List<UserRole> roles){
+        return actionBulletinService.retrieveTaskListByUserIdByRoleList(user.getId() , roles );
+    }
+ 
+    public void commonMethod() {
+        System.out.println("All different dashboard share this same method !");
+    }
+ 
+    public void setWorkFlowDashboard(WorkFlowDashboardBehavior dashBoardBehavior){
+        behavior = dashBoardBehavior;
+    }
+}
+ 
+@Component
+@Configurable
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public class TeamLeadBehavior implements WorkFlowDashboardBehavior{
+ 
+    public TeamLeadBehavior( ){
+ 
+    }
+ 
+    @Override
+    public void WorkFlowBehaviour(){
+        System.out.println("@@@@@@@@@@@@@@@@@@@ TeamLeadDashBoard :::");
+    }
+ 
+}
+ 
+ 
+@Component
+@Configurable
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public class RnoBehavior implements WorkFlowDashboardBehavior{
+ 
+    @Autowired
+    private ActionBulletinService actionBulletinService;
+ 
+    public RnoBehavior( ){
+ 
+    }
+ 
+    @Override
+    public void WorkFlowBehaviour() {
+        System.out.println("@@@@@@@@@@@@@@@@@ rno Behavior");
+ 
+    }
+ 
+}
+ 
+ 
+ 
+@Component
+@Configurable
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public class TeamLeadDashBoard extends Dashboard{
+ 
+    public TeamLeadDashBoard(){
+        behavior = new TeamLeadBehavior();
+    }
+ 
+    @Override
+    public void commonMethod(){
+        System.out.println("@@@@ This is TeamLeadDashboard");
+    }
+}
+ 
+public interface WorkFlowDashboardBehavior {
+ 
+    public void WorkFlowBehaviour();
+}
+ 
+ 
+ 
+@Component
+@Scope("session")
+public class ActionBulletinManagedBean extends BasePageBean{
+ 
+    private static final long serialVersionUID = 1L;
+ 
+    @Autowired
+    private ActionBulletinService actionBulletinService;
+ 
+    @Autowired
+    @Getter @Setter
+    private ActionBulletinPojo actionBulletinPojo;
+ 
+    @Autowired
+    private Dashboard board ; 
+ 
+    @PostConstruct
+    @Override
+    public void init() throws Exception {
+ 
+        setPageId(PageIds.BACKENDUSR_USER_MGNT);
+ 
+        actionBulletinPojo = null;
+        actionBulletinPojo = new ActionBulletinPojo ();
+ 
+        actionBulletinPojo.backendTaskList = new ArrayList<OrderDetail>();
+ 
+        manageDashBoard();
+ 
+    }
+ 
+    public void manageDashBoard(){
+        board = new TeamLeadDashBoard();
+        board.commonMethod();
+        actionBulletinPojo.setBackendTaskList(board.retrieveDashBoardList(getCurrentUser(), getCurrentUserRoles()));
+    }
+ 
+ 
+}

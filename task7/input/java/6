@@ -1,0 +1,93 @@
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+ 
+public class HashData{
+  public static void main(String[] args) throws Exception {
+    if (args.length != 1) {
+      System.out.println("2013ALL.csv");
+      System.exit(1);
+    }
+ 
+    File input = new File(args[0]);
+    List<String> attributes = readAttributes(input);
+ 
+    if (attributes.size() > 0) {
+      int index = 0;
+      for (String attribute : attributes) {
+        System.out.println(String.format("Attribute %d %s", index, attribute));
+        index++;
+      }
+ 
+      System.out.println(
+          String.format("What attribute would you like to summarize (0..%d)?",
+              attributes.size() - 1));
+ 
+      Scanner scanner = new Scanner(System.in);
+      index = scanner.nextInt();
+ 
+      if ((index >= attributes.size()) || (index < 0)) {
+        System.out.println(String.format("Wrong attribute index %d", index));
+      } else {
+        System.out.println(
+            String.format("Summarizing attribute %d (%s)", index, attributes.get(index)));
+        sum(input, index);
+      }
+    }
+  }
+ 
+  private static List<String> readAttributes(File input) throws Exception {
+    List<String> list = new ArrayList<String>();
+ 
+    Scanner scanner = new Scanner(input);
+    String line;
+ 
+    while (scanner.hasNextLine()) {
+      line = scanner.nextLine();
+ 
+      if (line.startsWith("@data")) {
+        break;
+      }
+ 
+      if (line.startsWith("@attribute")) {
+        String[] parts = line.split(" ");
+        list.add(parts[1]);
+      }
+    }
+ 
+    return list;
+  }
+ 
+  private static void sum(File input, int index) throws Exception  {
+    Scanner scanner = new Scanner(input);
+    Map<String, Integer> values = new HashMap<String, Integer>();
+    String line, key;
+    boolean dataStarted = false;
+ 
+    while (scanner.hasNextLine()) {
+      line = scanner.nextLine();
+ 
+      if (line.startsWith("@data")) {
+        dataStarted = true;
+      } else if (dataStarted) {
+        String[] parts = line.split(",");
+        key = parts[index];
+ 
+        if (values.containsKey(key)) {
+          values.put(key, values.get(key) + 1);
+        } else {
+          values.put(key, 1);
+        }
+      }
+    }
+ 
+    for (Map.Entry<String, Integer> entry : values.entrySet()) {
+      System.out.println(String.format("%s appeared %d times", entry.getKey(), entry.getValue()));
+    }
+ 
+    System.out.println(String.format("There were %d unique attributes values.", values.size()));
+  }
+}

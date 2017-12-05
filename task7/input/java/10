@@ -1,0 +1,224 @@
+import javax.swing.*;
+import java.sql.*;
+import java.awt.event.*;
+import java.awt.*;
+import java.io.*;
+ 
+public class GUIDatabase extends JFrame implements ActionListener
+{
+ Statement stmt;
+ResultSet rs;
+String sql;
+Connection con;
+ 
+            int i=0;
+             JButton BtnDel;
+            JButton BtnNew;
+             JButton BtnNext;
+     JButton BtnPrev;   
+     JButton BtnSave;
+     JButton BtnUpdate;
+     JTextField TxtAddr;
+     JTextField TxtRNo;
+     JTextField TxtName;
+     JLabel jLabel1;
+     JLabel jLabel2;
+     JLabel jLabel3;
+    public GUIDatabase()
+    {
+        jLabel1 = new JLabel("Roll no");
+        jLabel2 = new JLabel("Name");
+        jLabel3 = new JLabel("Address");
+        TxtRNo = new JTextField();
+        TxtName = new JTextField();
+        TxtAddr = new JTextField();
+ 
+        BtnNew = new JButton("New");
+        BtnSave = new JButton("Save");
+        BtnPrev = new JButton("Previous");
+        BtnNext = new JButton("Next");
+        BtnUpdate = new JButton("Update");
+        BtnDel = new JButton("Delete");
+ 
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setLayout(null);
+ 
+        this.setSize(500,450);
+        this.add(jLabel1);
+        jLabel1.setBounds(50, 100, 100, 40);
+        jLabel1.setForeground(Color.green);
+        this.add(jLabel2);
+        jLabel2.setBounds(50, 150, 100, 40);
+        jLabel2.setForeground(Color.green);
+        this.add(jLabel3);
+        jLabel3.setBounds(50, 200, 100, 40);
+        jLabel3.setForeground(Color.green);
+        this.add(TxtRNo);
+        TxtRNo.setBounds(110, 100, 300, 40);
+        this.add(TxtName);
+        TxtName.setBounds(110, 150, 300, 40);
+        this.add(TxtAddr);
+        TxtAddr.setBounds(110, 200, 300, 40);
+        this.add(BtnNew);
+        BtnNew.setBounds(50,250,100,50);
+        this.add(BtnSave);
+        BtnSave.setBounds(200,250,100,50);
+        this.add(BtnUpdate);
+        BtnUpdate.setBounds(350,250,100,50);
+        this.add(BtnPrev);
+        BtnPrev.setBounds(50,320,100,50);
+        this.add(BtnNext);
+        BtnNext.setBounds(200,320,100,50);
+        this.add(BtnDel);
+        BtnDel.setBounds(350,320,100,50);
+ 
+        BtnNew.addActionListener(this);
+        BtnSave.addActionListener(this);
+        BtnUpdate.addActionListener(this);
+        BtnDel.addActionListener(this);
+    BtnPrev.addActionListener(this);
+    BtnNext.addActionListener(this);
+    BtnSave.setBackground(Color.black);
+    BtnSave.setForeground(Color.white);
+    BtnNew.setBackground(Color.black);
+    BtnNew.setForeground(Color.white);
+    BtnUpdate.setBackground(Color.black);
+    BtnUpdate.setForeground(Color.white);
+    BtnPrev.setBackground(Color.black);
+    BtnPrev.setForeground(Color.white);
+    BtnNext.setBackground(Color.black);
+    BtnNext.setForeground(Color.white);
+    BtnDel.setBackground(Color.black);
+    BtnDel  .setForeground(Color.white);
+    this.setVisible(true);
+ 
+    }{
+        try
+                {
+ 
+              String url ="jdbc:mysql://localhost:3306/sample";
+              Class.forName("com.mysql.jdbc.Driver");
+              con=DriverManager.getConnection(url,"root","23");
+ 
+        }
+        catch(Exception e)
+        {}
+  }
+  public void actionPerformed(ActionEvent e)
+    {
+ 
+        if(e.getSource()==BtnNew)
+        {
+            TxtRNo.setText("");
+            TxtName.setText("");
+            TxtAddr.setText("");    
+        }
+    else    if(e.getSource()==BtnSave)
+        {
+            int rno;
+            rno=Integer.parseInt(TxtRNo.getText());
+            String name=TxtName.getText();
+            String addr=TxtAddr.getText();
+            sql="INSERT INTO test  VALUES ("+rno+",'"+name+"','"+addr+"')";
+ 
+            try
+            {
+                stmt=con.createStatement();
+                 stmt.executeUpdate(sql);
+                    JOptionPane.showMessageDialog(this, "Record Saved Successfully into database test");
+ 
+            }
+            catch(Exception e1){}
+ 
+        }
+ 
+        else if(e.getSource()==BtnUpdate)
+        {
+            int rno;
+            rno=Integer.parseInt(TxtRNo.getText());
+            String name=TxtName.getText();
+            sql="UPDATE test  SET name='"+name+"' where rno="+rno+"";
+            try
+            {
+                stmt=con.createStatement();
+                 stmt.executeUpdate(sql);
+                    JOptionPane.showMessageDialog(this, "Record Updated SuccessFully");
+            }
+            catch(Exception e2){}
+ 
+ 
+        }
+        else if(e.getSource()==BtnDel)
+        {
+              int rno=Integer.parseInt(TxtRNo.getText());
+        String nm=TxtName.getText();
+        String addr=TxtAddr.getText();
+        String sql="delete from test  where rno="+rno;
+        try
+        {
+            stmt=con.createStatement();
+            stmt.executeUpdate(sql);
+            JOptionPane.showMessageDialog(this, "Record Deleted Succesfully");
+            TxtRNo.setText("");
+            TxtName.setText("");
+            TxtAddr.setText("");
+        }
+        catch(Exception e3)
+        {}
+        }
+ 
+        else if(e.getSource()==BtnNext)
+        {
+            i++;
+            try
+            {
+            //  stmt=con.createStatment();
+                sql="select * from test where rno="+i;
+                rs=stmt.executeQuery(sql);
+                if(rs.next())
+                {
+                       TxtRNo.setText(rs.getString(1));
+                            TxtName.setText(rs.getString(2));
+                        TxtAddr.setText(rs.getString(3));
+ 
+                }
+            }
+            catch(Exception e4){}
+ 
+    }
+    else if(e.getSource()==BtnPrev)
+    {
+        if (i<=0)
+        {i=0;}
+ 
+        else{i--;}
+        try
+        {
+        sql="select * from test where rno="+i;
+        rs=stmt.executeQuery(sql);
+        if(rs.next())
+        {
+                   TxtRNo.setText(rs.getString(1));
+                            TxtName.setText(rs.getString(2));
+                        TxtAddr.setText(rs.getString(3));
+ 
+        }
+        }   
+            catch(Exception e5)
+            {}
+ 
+    }
+ 
+ }   
+    public static void main(String []args)
+    {
+        GUIDatabase demo=new GUIDatabase();
+        //.setBackground(Color.black);
+        demo.getContentPane().setBackground(Color.BLACK);
+ 
+    } 
+ 
+ 
+ 
+ 
+    }

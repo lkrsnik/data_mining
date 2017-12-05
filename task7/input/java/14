@@ -1,0 +1,302 @@
+import java.util.Scanner;
+ 
+abstract class Book
+{
+    int id;
+    String title;
+    String author;
+    String publisher;
+    int price;
+ 
+    abstract void getdata(int id, String title, String author, String publisher, int price);
+    abstract void putdata();
+}
+ 
+class Novel extends Book
+{
+    int copies;
+    int edition;
+    int nid;
+ 
+ 
+    public void cin(int x)
+    {
+        nid=x;
+ 
+        Scanner scan= new Scanner(System.in);
+        System.out.println("\nEnter Title of Novel:");
+        title=scan.nextLine();              
+ 
+        System.out.println("\nEnter Author of Novel:");
+        author=scan.nextLine();
+ 
+        System.out.println("\nEnter Publisher of Novel:");
+        publisher=scan.nextLine();
+ 
+        System.out.println("\nEnter Price of Novel:");
+        price=scan.nextInt();                       
+ 
+        System.out.println("\nEnter Number Of Copies:");
+        copies=scan.nextInt();                      
+ 
+        System.out.println("\nEnter Edition of Novel:");
+        edition=scan.nextInt();
+ 
+    }
+ 
+    void extra(int ncopies,int nedition)
+    {
+        copies=ncopies;
+        edition=nedition;
+    }
+ 
+    void getdata(int id1, String title1,String author1, String publisher1, int price1)
+    {
+        nid=id1;
+        title=title1;
+        author=author1;
+        publisher=publisher1;
+        price=price1;
+ 
+    }
+ 
+    void putdata()
+    {
+        System.out.println("\n\tID number --  \t"+nid);
+        System.out.println("\n\tTitle --  \t"+title);
+        System.out.println("\n\tAuthor --  \t"+author);
+        System.out.println("\n\tPublisher --  \t"+publisher);
+        System.out.println("\n\tPrice --  \t"+price);
+        System.out.println("\n\tNumber of Copies --  \t"+copies);
+        System.out.println("\n\tEdition --  \t"+edition);
+ 
+    }
+}
+ 
+ 
+class Magazine extends Book
+{
+    int copies;
+    String monyear="";
+    int mid;
+ 
+ 
+    void cin(int x)
+    {
+        mid=x;
+ 
+        Scanner obj1= new Scanner(System.in);
+        System.out.println("\nEnter Title for Magazine:");
+        title=obj1.nextLine();              
+ 
+        System.out.println("\nEnter Author of Magazine:");
+        author=obj1.nextLine();
+ 
+        System.out.println("\nEnter Publisher of Magazine:");
+        publisher=obj1.nextLine();
+ 
+        System.out.println("\nEnter Month and Year:");
+        monyear=obj1.nextLine();
+ 
+        System.out.println("\nEnter Price of Magazine:");
+        price=obj1.nextInt();                       
+ 
+        System.out.println("\nEnter No Of Copies:");
+        copies=obj1.nextInt();                      
+ 
+ 
+ 
+ 
+    }
+ 
+ 
+    void extra(int ncopies,String monyear1)
+    {
+        copies=ncopies;
+        monyear=monyear1;
+    }
+ 
+    void getdata(int id1, String title1, String author1, String publisher1, int price1)
+    {
+        mid=id1;
+        title=title1;
+        author=author1;
+        publisher=publisher1;
+        price=price1;
+    }
+ 
+    void putdata()
+    {
+        System.out.println("\n\tID number --  \t"+mid);
+        System.out.println("\n\tTitle --  \t"+title);
+        System.out.println("\n\tAuthor --  \t"+author);
+        System.out.println("\n\tPublisher --  \t"+publisher);
+        System.out.println("\n\tPrice --  \t"+price);
+        System.out.println("\n\tNumber of Copies --  \t"+copies);
+        System.out.println("\n\tMonth and Year --  \t"+monyear);
+ 
+    }   
+}
+ 
+public class AbstractBM
+{
+    public static void main(String args[])
+    {
+ 
+        int ncount=0,mcount=100;
+        int i=1,j=1;
+        int edition=0;
+        int copies=0;
+ 
+        Novel nobj[]=new Novel[5];
+        Magazine mobj[]=new Magazine[5];
+        Scanner obj= new Scanner(System.in);
+ 
+    while(true)
+    {
+        System.out.println("\n\nENTER YOUR CHOICE\n\t1: Add book\n\t2: Display all\n\t3.Edit book\n\t4.Delete book\n\t5: Exit");
+        int ch=obj.nextInt();
+ 
+        switch(ch)
+        {
+ 
+            case 1:
+ 
+                nobj[i]=new Novel();
+                mobj[j]=new Magazine();
+                System.out.println("\nENTER YOUR CHOICE\n\t1: Novel\n\t2: Magazine");
+                int ch1=obj.nextInt();
+ 
+                switch(ch1)
+                {
+                case 1:
+ 
+                    ncount++;
+                    nobj[i]=new Novel();
+                    nobj[i].cin(ncount);
+                    i++;
+                break;
+ 
+                case 2:
+ 
+                    mcount++;
+                    mobj[j]=new Magazine();
+                    mobj[i].cin(mcount);                
+                    j++;
+                break;
+                }
+            break;
+ 
+            case 2:
+ 
+                if(i==1)
+                {
+                    System.out.println("\nNo Entries ");
+                }
+                else
+                {
+                    System.out.println("\n-----NOVEL DETAILS-----\n");
+                    for(int k=1;k<i;k++)
+                    {
+                        nobj[k].putdata();
+                    }
+                }
+                if(j==1)
+                {
+                    System.out.println("\n No entries for Magazine");
+                }
+                else
+                {
+                    System.out.println("\n-----MAGAZINE DETAILS-----\n");
+                    for(int k=1;k<j;k++)
+                    {
+                        mobj[k].putdata();
+                    }
+                }
+            break;
+ 
+            case 3:
+ 
+                int idch;
+                System.out.println("\nENTER YOUR CHOICE\n\t1: Novel\n\t2: Magazine");
+                int ch3=obj.nextInt();
+                switch(ch3)
+                {
+                case 1:
+ 
+                    System.out.println("\n enter last no of id to edit: ");
+                    idch=obj.nextInt();
+                    nobj[idch].putdata();
+                    nobj[idch].cin(ncount); 
+                break;
+ 
+                case 2:
+ 
+                    System.out.println("\n enter last no id to edit: ");
+                    idch=obj.nextInt();
+                    mobj[idch].putdata();
+                    mobj[idch].cin(mcount);
+                break;
+ 
+                }
+            break;
+ 
+            case 4:
+                //int idch;
+                System.out.println("\nENTER YOUR CHOICE\n\t1: Novel\n\t2: Magazine");
+                int ch4=obj.nextInt();
+                switch(ch4)
+                {
+                case 1:
+ 
+                    System.out.println("\n enter last no of id to edit: ");
+                    idch=obj.nextInt();
+                    System.out.println("\nThe book Deleted was :");
+                    nobj[idch].putdata();
+                    nobj[idch]=null;
+                    int q=i;
+                    //for shifting the array upwards
+                    for(int p=idch;p<q;p++)
+                    {
+                        System.out.println("\nPerforming the shifting");
+                        nobj[p]=nobj[p+1];
+                    }
+                    nobj[i]=null;
+                    i--;
+ 
+ 
+                break;
+ 
+                case 2:
+ 
+                    System.out.println("\n enter last no of id to edit: ");
+                    idch=obj.nextInt();
+                    System.out.println("\nThe book Deleted was :");
+                    mobj[idch].putdata();
+                    mobj[idch]=null;
+                    int r=j;
+                    //for shifting the array upwards
+                    for(int p=idch;p<r;p++)
+                    {
+                        System.out.println("\nPerforming the shifting");
+                        mobj[p]=mobj[p+1];
+                    }
+                    mobj[j]=null;
+                    j--;
+ 
+ 
+                break;
+                }
+            break;
+            case 5:
+                System.exit(0);
+            break;
+ 
+            default:
+                System.out.println("Wrong Choice Please Try Again");        
+        }                               
+ 
+ 
+    }
+    }
+}

@@ -1,0 +1,380 @@
+from django.template import RequestContext
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from scrumko.forms import UserForm, UserProfileForm, SprintCreateForm, ProjectCreateForm, StoryForm, ProjectEditForm, UserEditForm, NotificationPermissionForm, StoryEditForm, SprintEditForm, UserOrientedEditForm, TaskEditForm, Work_Time_Edit_Form
+from scrumko.forms import TaskForm
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+from django.contrib.auth import authenticate, login
+from django.http import HttpResponseRedirect, HttpResponse
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
+from django.db import transaction
+from django.db.models import Q
+from django.core.exceptions import ValidationError
+from django.db.models import Min
+from datetime import date, timedelta as td
+
+from datetime import date, datetime
+import datetime
+from django.db.models import Sum
+
+from scrumko.models import User
+from scrumko.models import UserProfile, Task, Story_Sprint, Remaining
+from scrumko.models import Sprint, Project, Story, Poker, Poker_estimates, NotificationPermission, StoryNotification, Work_Time, Post, Post_Comment, Documentation
+
+from decimal import Decimal
+
+import json
+import decimal
+#from scrumko.forms import UserForm, UserProfileForm
+
+#from django.core.serializers.json import DjangoJSONEncoder
+
+
+
+@ensure_csrf_cookie
+
+@login_required
+def home(request):
+    
+    # get current user
+    current_user = request.user.id
+    
+    
+    # Request the context of the request.
+    context = RequestContext(request)
+            
+    # Project choose
+    
+    project_info = Project.objects.filter(Q(scrum_master__id = current_user) | Q(project_owner = current_user) | Q(team__id = current_user)).distinct()
+    context_dict = {"project_detail" : project_info}
+    
+    # if user choose project, save this project id and name 
+    if int(request.GET.get('project_id', '0'))>0:
+        request.session['selected_project'] = int(request.GET.get('project_id', '0'))
+        request.session['project_name'] = request.GET.get('name', '')
+    # if project not choose
+    else:
+        if not request.session.get('selected_project'):
+            # on begining select first project      
+            # if exsist any project
+            if len (project_info) > 0:
+                pr = project_info[0]
+                request.session['selected_project'] = pr.id
+                request.session['project_name'] = pr.project_name
+            else:   
+                request.session['selected_project'] = 0
+                request.session['project_name'] = ''
+    
+    # get information what roles user has on curent project
+    selected_project_id = request.session['selected_project']
+    is_owner = len (Project.objects.filter(project_owner__id = current_user, id = selected_project_id)) > 0
+    is_scrum_master = len (Project.objects.filter(scrum_master__id = current_user, id = selected_project_id)) > 0
+    is_project_owner = len (Project.objects.filter(project_owner__id = current_user, id = selected_project_id)) > 0
+    # Construct a dictionary to pass to the template engine as its context.
+    is_team_member = Project.objects.filter (team__id = current_user, id = selected_project_id).exists();
+    
+    context_dict.update( {'is_project_owner':is_project_owner, 'is_owner':is_owner, 'is_scrum_master': is_scrum_master, 'is_team_memeber' : is_team_member});   
+                
+    return render_to_response('scrumko/home.html', context_dict, context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def register(request):
+    
+    context = RequestContext(request)
+    registered = False
+    if request.method == 'POST':
+        user_form = UserForm(data=request.POST)
+        profile_form = UserProfileForm(data=request.POST)
+        
+        if user_form.is_valid() and profile_form.is_valid():        
+            user = user_form.save()     
+            user.set_password(user.password)
+            user.save()
+            profile = profile_form.save(commit=False)
+            profile.user = user
+
+            if 'picture' in request.FILES:
+                profile.picture = request.FILES['picture']
+            profile.save()
+            registered = True
+        else:
+            print user_form.errors, profile_form.errors
+            return render_to_response('scrumko/register.html',{'user_form': user_form, 'profile_form': profile_form, 'registered': registered}, context)
+    else:
+        user_form = UserForm()
+        profile_form = UserProfileForm()
+    return render_to_response('scrumko/register.html',{'user_form': user_form, 'profile_form': profile_form, 'registered': registered}, context)
+
+def index(request):
+    # Like before, obtain the context for the user's request.
+    context = RequestContext(request)
+    success=True;
+    # If the request is a HTTP POST, try to pull out the relevant information.
+    if request.method == 'POST':
+        # Gather the username and password provided by the user.
+        # This information is obtained from the login form.
+        username = request.POST['username']
+        password = request.POST['password']
+
+        # Use Django's machinery to attempt to see if the username/password
+        # combination is valid - a User object is returned if it is.
+        user = authenticate(username=username, password=password)
+
+        # If we have a User object, the details are correct.
+        # If None (Python's way of representing the absence of a value), no user
+        # with matching credentials was found.
+        if user is not None:
+            # Is the account active? It could have been disabled.
+            if user.is_active:
+                # If the account is valid and active, we can log the user in.
+                # We'll send the user back to the homepage.
+                login(request, user)
+                
+                request.session['selected_project'] = 0
+                request.session['project_name'] = ''
+                
+                addprojecttosession (request)   
+                
+                return HttpResponseRedirect('/scrumko/home/')
+            else:
+                # An inactive account was used - no logging in!
+                success=False;
+                return HttpResponse("Your Scrumko account is disabled.")
+        else:
+            # Bad login details were provided. So we can't log the user in.
+            print "Invalid login details: {0}, {1}".format(username, password)
+            success=False;
+            return render_to_response('scrumko/index.html', {'success': success}, context)
+            #return HttpResponse("Invalid login details supplied.")
+
+    # The request is not a HTTP POST, so display the login form.
+    # This scenario would most likely be a HTTP GET.
+    else:
+        # No context variables to pass to the template system, hence the
+        # blank dictionary object...
+        return render_to_response('scrumko/index.html', {'success': success}, context)
+
+# this function add project in session
+
+def addprojecttosession (request):
+    # get all user projects and add it to session
+    current_user = request.user.id
+    project_info = Project.objects.filter(Q(scrum_master__id = current_user) | Q(project_owner__id = current_user) | Q(team__id = current_user)).distinct()
+        
+    # change this qs in array
+    projects = []
+    
+    for pr in project_info:
+        role = "as "
+        if pr.scrum_master.id == current_user:
+            role += "Scrum master"                      
+            role += ", " if pr.project_owner.id == current_user or pr.team.filter (id = current_user).exists() else " " 
+            
+        if pr.project_owner.id == current_user:
+            role += "Project owner"
+            role += ", " if pr.team.filter (id = current_user).exists() else " " 
+            
+        if pr.team.filter (id = current_user).exists():
+            role += "Team member"
+                            
+        d = [pr.project_name, pr.id, role]
+        projects.append(d)
+    
+    request.session['project'] = projects
+
+
+# Use the login_required() decorator to ensure only those logged in can access the view.
+@login_required
+def user_logout(request):
+    
+    request.session['selected_project'] = 0
+    request.session['project_name'] = ''
+    
+    # Since we know the user is logged in, we can now just log them out.
+    logout(request)
+
+    # Take the user back to the homepage.
+    return HttpResponseRedirect('/scrumko/')
+
+@login_required
+def productbacklog(request):
+    context = RequestContext(request)
+    
+    if request.session['selected_project'] == 0:
+        return render_to_response ('scrumko/noprojectselected.html', {}, context)
+    
+    allStories = Story.objects.filter(project_name__id=request.session['selected_project'], status = False)
+    
+    current_user = request.user.id
+    selected_project_id = request.session['selected_project']
+    is_owner = len (Project.objects.filter(project_owner__id = current_user, id = selected_project_id)) > 0
+    is_scrum_master = len (Project.objects.filter(scrum_master__id = current_user, id = selected_project_id)) > 0
+    note_permission = NotificationPermission.objects.get(project__id=selected_project_id)
+    note_permission = note_permission.permission
+    
+    allNotifications = StoryNotification.objects.filter(story__project_name__id = selected_project_id)  
+    addStorytoSprint = Story_Sprint.objects.filter(story__project_name__id = selected_project_id)
+    addStorytoFinished = Story.objects.filter(project_name__id = selected_project_id)
+
+    
+    # get story sprint data for current project where story in current sprint
+    story_sp = Story_Sprint.objects.filter(story__project_name__id = selected_project_id, sprint = current_sprint(request))
+        
+    # stories in sprint
+    stroyinsprint = Story.objects.filter(project_name__id=request.session['selected_project'], id__in = story_sp.values_list('story_id', flat=True), status = False)
+    
+    stspnew = []
+    
+    for story in stroyinsprint:
+        # check if not task finished
+        allfinished = Task.objects.filter (story = story, status = 2)
+        alltasks_st = Task.objects.filter (story = story)
+        
+        can_end = len(allfinished) > 0 and len (allfinished) == len (alltasks_st)
+        stspnew.append ([story, can_end])       
+    
+    # stories not in sprint
+    stroynotinsprint = Story.objects.filter(project_name__id=request.session['selected_project'],  status = False).exclude(id__in = story_sp.values_list('story_id', flat=True))
+        
+    # check if stprint exsist
+    sprint_exsist = not current_sprint (request) == None;
+    
+    return render_to_response('scrumko/productbacklog.html', {'addStorytoFinished': addStorytoFinished,'addStorytoSprint': addStorytoSprint, 'allNotifications': allNotifications, 'note_permission': note_permission, 'stroyinsprint': stspnew, 'stroynotinsprint': stroynotinsprint, 'is_owner': is_owner, 'is_scrum_master': is_scrum_master, 'sprint_exsist': sprint_exsist}, context)
+
+def productbacklog_fin(request):
+    context = RequestContext(request)
+    
+    if request.session['selected_project'] == 0:
+        return render_to_response ('scrumko/noprojectselected.html', {}, context)
+    
+    # get all stories to show
+    allStories = Story.objects.filter(project_name__id=request.session['selected_project'], status = True)
+    
+    current_user = request.user.id
+    selected_project_id = request.session['selected_project']
+    is_owner = len (Project.objects.filter(project_owner__id = current_user, id = selected_project_id)) > 0
+    is_scrum_master = len (Project.objects.filter(scrum_master__id = current_user, id = selected_project_id)) > 0
+    note_permission = NotificationPermission.objects.get(project__id=selected_project_id)
+    note_permission = note_permission.permission
+    
+    allNotifications = StoryNotification.objects.filter(story__project_name__id = selected_project_id)
+    
+    return render_to_response('scrumko/productbacklog_fin.html', {'allNotifications': allNotifications, 'note_permission': note_permission, 'allStories': allStories, 'is_owner': is_owner, 'is_scrum_master': is_scrum_master}, context)
+
+def current_sprint(request):
+    sprint = Sprint.objects.filter(project_name__id = request.session['selected_project'], start_date__lte = date.today(), finish_date__gte = date.today())
+    
+    if len (sprint ) == 0:
+        return None
+    else:
+        return sprint[0]
+        
+@login_required
+def sprintbacklog(request):
+    this_sprint=current_sprint(request)
+    if this_sprint!=None:
+        allStories = Story_Sprint.objects.filter(sprint__id = current_sprint(request).id)
+    else:
+        allStories = None
+    allTasks=Task.objects.all();
+    
+    context = RequestContext(request)
+
+    if request.session['selected_project'] == 0:
+        return render_to_response ('scrumko/noprojectselected.html', {}, context)
+
+    #allStories = Story.objects.filter(project_name__id=request.session['selected_project'])
+    
+    current_user = request.user.id
+    selected_project_id = request.session['selected_project']
+    is_owner = len (Project.objects.filter(project_owner__id = current_user, id = selected_project_id)) > 0
+    is_scrum_master = len (Project.objects.filter(scrum_master__id = current_user, id = selected_project_id)) > 0
+    note_permission = NotificationPermission.objects.get(project__id=selected_project_id)
+    note_permission = note_permission.permission
+    
+    allNotifications = StoryNotification.objects.filter(story__project_name__id = selected_project_id)
+    addStorytoFinished2 = Story.objects.filter(project_name__id = selected_project_id)
+    
+    status = int(request.GET.get('accept', '0'))
+    releasing = int(request.GET.get('release', '0'))
+    if status > 0:
+        taskid = int(request.GET.get('task', '0'))
+        task = Task.objects.get(id=taskid);
+        task.status=1;
+        this_user=User.objects.get(id=current_user)
+        task.worker=this_user
+        task.save()     
+    if releasing > 0:
+        taskid = int(request.GET.get('task', '0'))
+        task = Task.objects.get(id=taskid);
+        task.status=0;
+        task.worker=None
+        task.save()
+    
+    #########################################
+    # PG code here...                       #
+    #########################################
+    
+    #add previous all task in alltasks1
+    alltasks1= allTasks 
+    
+    # create 2d table allTasks
+    allTsaks2 = [[0 for x in range(3)] for x in range(len(alltasks1))]
+    
+    for i in range (len(alltasks1)):
+        # get remaining for each task
+        remaining = Remaining.objects.filter (task = alltasks1[i])
+        
+        allTsaks2[i][1] = remaining[len(remaining)-1].time
+        allTsaks2[i][0] = alltasks1[i]
+        
+    #########################################
+    #########################################
+    
+    return render_to_response('scrumko/sprintbacklog.html', {'addStorytoFinished2': addStorytoFinished2, 'allNotifications': allNotifications, 'note_permission': note_permission, 'allStories': allStories, 'allTasks': allTsaks2, 'is_owner': is_owner, 'is_scrum_master': is_scrum_master}, context)
+
+    
+@login_required
+def addstorytosprint(request, id):
+    storyinsprint = False
+    # get current user
+    current_user = request.user.id
+    
+    # get selected project
+    user_project =  Project.objects.filter(scrum_master__id = current_user, id = request.session['selected_project'])
+    
+    # redirect back if user has not permision   
+    if len (user_project) == 0: 
+        return HttpResponseRedirect('/scrumko/home')
+    
+    # check if story sprint exsist
+    current_sprintek = current_sprint(request)
+    
+    if (current_sprintek) is None:
+        return HttpResponseRedirect('/scrumko/home/')
+    
+    current_story = Story.objects.filter(id = id)
+
+    # if current story is in current sprint
+    sp_st = Story_Sprint.objects.filter(story = current_story, sprint = current_sprintek)
+    
+    if len (sp_st) > 0:
+        
+        return HttpResponseRedirect('/scrumko/home')
+    else:
+        
+        if not current_sprintek or len(current_story) == 0: 
+            return HttpResponseRedirect('/scrumko/home')
+        else:   
+            
+            storyinsprint = True
+        
+            context = RequestContext(request)
+            add = Story_Sprint.objects.create(sprint=current_sprintek, story = current_story[0])
+            
+            return HttpResponseRedirect("/scrumko/productbacklog")  

@@ -1,0 +1,211 @@
+import java.awt.*;
+ 
+import java.awt.event.*;
+ 
+import java.text.*;
+ 
+import java.util.*;
+ 
+import javax.swing.*;
+ 
+ 
+ 
+public class myclock extends JFrame implements Runnable
+ 
+{
+ 
+    Thread thread=null;
+ 
+    SimpleDateFormat Formatter=new SimpleDateFormat("s",Locale.getDefault());
+ 
+    Date currentDate;
+ 
+    int xcenter=175,ycenter=175,lastxs=0,lastys=0,lastxm=0,lastym=0,lastxh=0,lastyh=0;
+ 
+ 
+ 
+    private void drawStructure(Graphics g)
+ 
+    {
+ 
+ 
+ 
+            g.setColor(Color.magenta);
+ 
+            g.fillOval(25,25,300,300);
+ 
+            g.setColor(Color.white);
+ 
+            g.drawString("9",28,175);
+ 
+            g.drawString("12",165,50);
+ 
+            g.drawString("3",305,175);
+ 
+            g.drawString("6",165,315);
+ 
+    }   
+ 
+    public void paint(Graphics g)
+ 
+    {
+ 
+        int xsecond,ysecond,xminute,yminute,xhour,yhour,second,minute,hour;
+ 
+        Calendar cal=Calendar.getInstance();
+ 
+        currentDate=new Date();
+ 
+        second=cal.get(Calendar.SECOND);
+ 
+        minute=cal.get(Calendar.MINUTE);
+ 
+        hour=cal.get(Calendar.HOUR);
+ 
+ 
+ 
+        xsecond=(int)(Math.cos(second*3.14f/30-3.14f/2)*120+xcenter);System.out.println(second);
+ 
+        ysecond=(int)(Math.sin(second*3.14f/30-3.14f/2)*120+ycenter);System.out.println(minute);
+ 
+        xminute=(int)(Math.cos(minute*3.14f/30-3.14f/2)*100+xcenter);System.out.println(hour);
+ 
+        yminute=(int)(Math.sin(minute*3.14f/30-3.14f/2)*100+ycenter);
+ 
+        xhour=(int)(Math.cos(hour*3.14f/6-3.14f/2)*80+xcenter);
+ 
+ 
+ 
+        yhour=(int)(Math.sin(hour*3.14f/6-3.14f/2)*80+ycenter);
+ 
+ 
+ 
+        drawStructure(g);
+ 
+ 
+ 
+        g.setColor(Color.red);
+ 
+        g.drawLine(xcenter,ycenter-1,xsecond,ysecond);//**lastxs,lastys     
+ 
+        g.drawLine(xcenter-1,ycenter,xsecond,ysecond);//**lastxs,lastys     
+ 
+        g.setColor(Color.yellow);
+ 
+        g.drawLine(xcenter,ycenter-1,xminute,yminute);
+ 
+        g.drawLine(xcenter-1,ycenter,xminute,yminute);//**lastxs,lastys     
+ 
+        g.setColor(Color.blue);
+ 
+        g.drawLine(xcenter,ycenter-1,xhour,yhour);
+ 
+        g.drawLine(xcenter-1,ycenter,xhour,yhour);//**lastxs,lastys     
+ 
+        lastxs=xsecond;
+ 
+        lastys=ysecond;
+ 
+        lastxm=xminute;
+ 
+        lastym=yminute;
+ 
+        lastxh=xhour;
+ 
+        lastyh=yhour;
+ 
+    }
+ 
+ 
+ 
+    public void start()
+ 
+    {
+ 
+        if(thread==null)
+ 
+        thread=new Thread(this);
+ 
+        thread.start();
+ 
+    }
+ 
+    public void stop()
+ 
+    {
+ 
+        thread=null;
+ 
+    }
+ 
+    public void run()
+ 
+    {
+ 
+        if(thread!=null)
+ 
+        {
+ 
+            try
+ 
+            {
+ 
+                while(thread!=null)
+ 
+                {
+ 
+                Thread.sleep(1000);
+ 
+                repaint();
+ 
+                }
+ 
+            }
+ 
+            catch(Exception e){}
+ 
+        }   
+ 
+    }
+ 
+ 
+ 
+  public myclock()
+ 
+  {
+ 
+    Container window=getContentPane();
+ 
+        setSize(500,500);
+ 
+        setBackground(Color.green);
+ 
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+ 
+ 
+ 
+ 
+ 
+       start();
+ 
+       setVisible(true);
+ 
+  }
+ 
+    public static void main(String args[])
+ 
+    {
+ 
+ 
+ 
+ 
+ 
+        myclock m1=new myclock();
+ 
+ 
+ 
+ 
+ 
+    }
+ 
+}
